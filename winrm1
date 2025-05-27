@@ -1,0 +1,15 @@
+# Add this before your "windows-restart" provisioner if you suspect WinRM config issues
+provisioner "powershell" {
+  inline = [
+    "Write-Host 'Ensuring robust WinRM configuration...'",
+    "Get-Service -Name WinRM | Where-Object {$_.Status -ne 'Running'} | Start-Service",
+    "Set-Service -Name WinRM -StartupType Automatic",
+    "winrm qc -Force", # Re-run quickconfig to ensure basic listener and firewall
+    "winrm set winrm/config/service/auth @{Basic=\"true\"}",
+    "winrm set winrm/config/service @{AllowUnencrypted=\"true\"}", # May be needed if you use local accounts and face issues
+    "Set-ItemProperty -Path HKLM:\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Policies\\System -Name LocalAccountTokenFilterPolicy -Value 1 -Force",
+    "winrm set winrm/config/winrs @{MaxConcurrentOperationsPerUser=\"25\"}",
+    "Write-Host 'WinRM configuration re-applied.'"
+  ]
+  timeout = "5m"
+}
