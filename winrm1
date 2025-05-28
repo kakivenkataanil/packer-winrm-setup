@@ -13,3 +13,17 @@ provisioner "powershell" {
   ]
   timeout = "5m"
 }
+
+
+  provisioner "powershell" {
+    inline = [
+      "winrm quickconfig -quiet",
+      "Set-Item -Path WSMan:\\localhost\\Service\\AllowUnencrypted -Value $false",
+      "Set-Item -Path WSMan:\\localhost\\Service\\Auth\\Basic -Value $true",
+      "$cert = New-SelfSignedCertificate -DnsName 'packerhost' -CertStoreLocation Cert:\\LocalMachine\\My",
+      "New-Item -Path WSMan:\\Localhost\\Listener -Transport HTTPS -Address * -CertificateThumbprint $cert.Thumbprint -Force",
+      "Set-Item WSMan:\\localhost\\Client\\TrustedHosts -Value '*' -Force",
+      "Enable-PSRemoting -Force",
+      "New-NetFirewallRule -DisplayName 'WinRM HTTPS' -Name 'WinRMHTTPS' -Protocol TCP -LocalPort 5986 -Action Allow"
+    ]
+  }
